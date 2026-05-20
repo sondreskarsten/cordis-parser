@@ -1,4 +1,4 @@
-"""Parse CORDIS organization records and resolve Norwegian orgnrs.
+r"""Parse CORDIS organization records and resolve Norwegian orgnrs.
 
 Reads organization.csv rows for all programmes, resolves Norwegian
 beneficiaries via VAT pattern ``NO\d{9}MVA`` → first 9 digits = orgnr.
