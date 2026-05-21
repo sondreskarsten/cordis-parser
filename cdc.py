@@ -231,23 +231,24 @@ class CordisCDC:
                     "programmes": prog,
                 }
 
+        if run_mode != "bootstrap":
+            for key, old_h in old_snaps.items():
+                if key not in new_snaps:
+                    changelog_rows.append({
+                        "orgnr": "", "document_id": f"{key[0]}-{key[1]}",
+                        "data_source": "cordis", "event_type": "disappeared",
+                        "event_subtype": "cordis_participation_ended",
+                        "summary": f"Participation ended: project {key[0]}",
+                        "changed_fields": None, "valid_time": run_date, "detected_time": detected_time,
+                        "details_json": None, "source_run_mode": run_mode, "run_id": run_id,
+                    })
+
         if changelog_rows:
             cl_table = pa.Table.from_pylist(changelog_rows, schema=CHANGELOG_SCHEMA)
             cl_path = self._gcs_path("cdc", "changelog", f"{run_date}.parquet")
             self._write_parquet(cl_table, cl_path)
 
         snap_rows = list(new_snaps.values())
-        for key, old_h in old_snaps.items():
-            if key not in new_snaps:
-                snap_rows.append({
-                    "projectID": key[0],
-                    "organisationID": key[1],
-                    "orgnr": "",
-                    "programme": "",
-                    "content_hash": old_h,
-                    "role": "",
-                    "projectAcronym": "",
-                })
         if snap_rows:
             snap_table = pa.Table.from_pylist(snap_rows, schema=SNAPSHOT_SCHEMA)
             self._write_parquet(snap_table, self._gcs_path("cdc", "snapshots.parquet"))
