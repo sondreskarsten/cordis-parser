@@ -29,15 +29,19 @@ import pyarrow.parquet as pq
 from google.cloud import storage as gcs_lib
 
 
+TRACKED_FIELDS = [
+    "role", "ecContribution", "netEcContribution", "totalCost",
+    "endOfParticipation", "active", "name", "activityType", "SME",
+]
+
 SNAPSHOT_SCHEMA = pa.schema([
     ("projectID", pa.string()),
     ("organisationID", pa.string()),
     ("orgnr", pa.string()),
     ("programme", pa.string()),
     ("content_hash", pa.string()),
-    ("role", pa.string()),
     ("projectAcronym", pa.string()),
-])
+] + [(f, pa.string()) for f in TRACKED_FIELDS])
 
 POOL_SCHEMA = pa.schema([
     ("orgnr", pa.string()),
@@ -118,10 +122,14 @@ class CordisCDC:
         if t is None:
             return {}
         d = t.to_pydict()
-        return {
-            (d["projectID"][i], d["organisationID"][i]): d["content_hash"][i]
-            for i in range(t.num_rows)
-        }
+        result = {}
+        for i in range(t.num_rows):
+            key = (d["projectID"][i], d["organisationID"][i])
+            result[key] = {"content_hash": d["content_hash"][i]}
+            for f in TRACKED_FIELDS:
+                if f in d:
+                    result[key][f] = d[f][i]
+        return result
 
     def _load_pool(self):
         t = self._read_parquet(self._gcs_path("cdc", "pool.parquet"))
@@ -161,29 +169,28 @@ class CordisCDC:
         for row in resolved_rows:
             key = (row["projectID"], row["organisationID"])
             h = row["content_hash"]
-            old_h = old_snaps.get(key)
-
-            new_snaps[key] = {
+            snap_row = {
                 "projectID": row["projectID"],
                 "organisationID": row["organisationID"],
                 "orgnr": row["orgnr"],
                 "programme": row["programme"],
                 "content_hash": h,
-                "role": row["role"],
                 "projectAcronym": row["projectAcronym"],
             }
+            for f in TRACKED_FIELDS:
+                snap_row[f] = str(row.get(f) or "")
+            new_snaps[key] = snap_row
 
-            if run_mode == "bootstrap":
+            old_entry = old_snaps.get(key)
+
+            if run_mode == "bootstrap" or old_entry is None:
                 event_type = "new"
                 changed_fields = None
                 new_count += 1
-            elif old_h is None:
-                event_type = "new"
-                changed_fields = None
-                new_count += 1
-            elif old_h != h:
+            elif old_entry["content_hash"] != h:
                 event_type = "modified"
-                changed_fields = json.dumps(["content_hash"])
+                diffs = [f for f in TRACKED_FIELDS if str(row.get(f) or "") != str(old_entry.get(f) or "")]
+                changed_fields = json.dumps(diffs) if diffs else json.dumps(["content_hash"])
                 mod_count += 1
             else:
                 continue
