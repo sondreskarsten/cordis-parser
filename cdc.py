@@ -253,7 +253,7 @@ class CordisCDC:
                 }
 
         if run_mode != "bootstrap":
-            for key, old_h in old_snaps.items():
+            for key, old_entry in old_snaps.items():
                 if key not in new_snaps:
                     changelog_rows.append({
                         "orgnr": "", "document_id": f"{key[0]}-{key[1]}",
