@@ -72,11 +72,11 @@ def load_enheter_lookup(bucket_name, prefix):
 
     blob = bucket.blob(path)
     data = blob.download_as_bytes()
-    table = pq.read_table(io.BytesIO(data), columns=["org_nr", "navn"])
+    table = pq.read_table(io.BytesIO(data), columns=["org_nr", "name"])
 
     lookup = {}
     org_nrs = table.column("org_nr").to_pylist()
-    names = table.column("navn").to_pylist()
+    names = table.column("name").to_pylist()
     for orgnr, name in zip(org_nrs, names):
         if orgnr and name:
             lookup[name.upper().strip()] = str(orgnr).strip()
