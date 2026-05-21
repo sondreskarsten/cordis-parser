@@ -118,6 +118,8 @@ def main():
     for prog in PROGRAMMES:
         org_rows = reader.read_organisations(snapshot, prog)
         if not org_rows:
+            org_rows = reader.read_csv(snapshot, prog, "csv/organization.csv")
+        if not org_rows:
             print(f"  {prog}: no organization.csv", flush=True)
             continue
 

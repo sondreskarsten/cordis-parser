@@ -60,15 +60,15 @@ def content_hash(row):
     event in the changelog.
     """
     tracked = [
-        row.get("role", ""),
-        row.get("ecContribution", ""),
-        row.get("netEcContribution", ""),
-        row.get("totalCost", ""),
-        row.get("endOfParticipation", ""),
-        row.get("active", ""),
-        row.get("name", ""),
-        row.get("activityType", ""),
-        row.get("SME", ""),
+        row.get("role") or "",
+        row.get("ecContribution") or "",
+        row.get("netEcContribution") or "",
+        row.get("totalCost") or "",
+        row.get("endOfParticipation") or "",
+        row.get("active") or "",
+        row.get("name") or "",
+        row.get("activityType") or "",
+        row.get("SME") or "",
     ]
     return hashlib.sha256("|".join(tracked).encode()).hexdigest()[:16]
 
