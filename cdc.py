@@ -229,6 +229,7 @@ class CordisCDC:
                 "event_subtype": f"{row['programme']}_{row['role']}",
                 "summary": summary,
                 "changed_fields": changed_fields,
+                # REVIEW: valid_time = contentUpdateDate (CORDIS source timestamp). State register diffed like enheter — should be snapshot date. See valid_time_audit.md
                 "valid_time": row.get("contentUpdateDate", run_date),
                 "detected_time": detected_time,
                 "details_json": json.dumps(details, ensure_ascii=False),
